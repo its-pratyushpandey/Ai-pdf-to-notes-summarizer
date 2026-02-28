@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    * {
+        @apply border-slate-200;
+    }
+    body {
+        @apply bg-white text-slate-900;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+@layer utilities {
+    .font-heading {
+        @apply font-sans tracking-tight font-bold;
+    }
+    .font-body {
+        @apply font-body leading-relaxed;
+    }
+    .font-notes {
+        @apply font-serif leading-loose;
+    }
+}

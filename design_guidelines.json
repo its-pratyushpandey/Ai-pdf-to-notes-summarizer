@@ -1,0 +1,158 @@
+{
+  "identity": {
+    "name": "NoteGenius AI",
+    "vibe": "The Intellectual's Studio",
+    "archetype": "Swiss High-Contrast meets Digital Paper",
+    "emotion": "Clarity, Focus, Intelligence"
+  },
+  "typography": {
+    "fonts": [
+      {
+        "family": "Plus Jakarta Sans",
+        "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
+        "usage": "Headings, UI Elements, Buttons",
+        "class": "font-sans"
+      },
+      {
+        "family": "Inter",
+        "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap",
+        "usage": "Body text, Dashboard data",
+        "class": "font-body"
+      },
+      {
+        "family": "Merriweather",
+        "url": "https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap",
+        "usage": "Generated Notes Content (The 'Paper' view)",
+        "class": "font-serif"
+      }
+    ],
+    "rules": {
+      "headings": "tracking-tight font-bold text-slate-900 dark:text-white",
+      "body": "leading-relaxed text-slate-600 dark:text-slate-400",
+      "notes": "leading-loose text-slate-800 dark:text-slate-200 font-serif"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#4338ca",
+        "foreground": "#ffffff",
+        "hover": "#3730a3"
+      },
+      "secondary": {
+        "DEFAULT": "#f1f5f9",
+        "foreground": "#0f172a"
+      },
+      "accent": {
+        "DEFAULT": "#e0e7ff",
+        "foreground": "#4338ca"
+      },
+      "background": {
+        "light": "#ffffff",
+        "dark": "#020617",
+        "paper": "#fafaf9"
+      },
+      "surface": {
+        "light": "#ffffff",
+        "dark": "#0f172a"
+      }
+    },
+    "gradients": {
+      "hero": "bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950",
+      "glass": "bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 shadow-xl"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "section": "py-16 lg:py-24",
+      "card_padding": "p-6 sm:p-8"
+    },
+    "grids": {
+      "bento_dashboard": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+      "split_generator": "grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-4rem)]"
+    },
+    "radius": {
+      "default": "rounded-xl",
+      "button": "rounded-lg",
+      "card": "rounded-2xl"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:-translate-y-0.5",
+      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all duration-200",
+      "ghost": "hover:bg-slate-100 text-slate-600 hover:text-slate-900"
+    },
+    "cards": {
+      "base": "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300",
+      "glass": "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 shadow-xl"
+    },
+    "inputs": {
+      "default": "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": {
+      "soft": "shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+      "glow": "shadow-[0_0_20px_rgba(67,56,202,0.15)]"
+    },
+    "borders": {
+      "subtle": "border border-slate-200/60 dark:border-slate-800/60"
+    },
+    "textures": {
+      "noise": "bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"
+    }
+  },
+  "motion": {
+    "libraries": ["framer-motion", "gsap"],
+    "transitions": {
+      "page": {
+        "initial": { "opacity": 0, "y": 20 },
+        "animate": { "opacity": 1, "y": 0 },
+        "exit": { "opacity": 0, "y": -20 },
+        "transition": { "duration": 0.4, "ease": "easeOut" }
+      },
+      "card_hover": {
+        "scale": 1.02,
+        "transition": { "duration": 0.2 }
+      }
+    }
+  },
+  "images": {
+    "hero_bg": {
+      "url": "https://images.unsplash.com/photo-1765046255517-412341954c4c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRpZ2l0YWwlMjB3YXZlJTIwbGluZXMlMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzcwNDAyODI1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Abstract digital waves representing AI processing",
+      "category": "background"
+    },
+    "workspace_light": {
+      "url": "https://images.pexels.com/photos/4065876/pexels-photo-4065876.jpeg",
+      "alt": "Clean minimalist workspace with laptop",
+      "category": "landing_feature"
+    },
+    "workspace_dark": {
+      "url": "https://images.unsplash.com/photo-1618424562492-f778e25652a1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwd29ya3NwYWNlJTIwbGFwdG9wJTIwY29mZmVlfGVufDB8fHx8MTc3MDQwMjgyM3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "Dark mode workspace setup",
+      "category": "landing_feature"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Install 'framer-motion' and 'gsap' immediately.",
+    "2. FONTS: Add the Google Fonts links to the <head> of public/index.html.",
+    "3. THEME: Implement a 'Smart Toggle' for theme. Default to Light Mode for the 'Notes View' (to simulate paper) but allow Dark Mode for the Dashboard.",
+    "4. NOTES VIEW: The generated notes MUST look like a high-end editorial article. Use the 'Merriweather' font for the content, generous line-height (leading-loose), and distinct headings.",
+    "5. INPUT: The PDF upload area should be a large, dashed-border dropzone that animates on drag-over.",
+    "6. LOADING: Create a 'Thinking' state where the AI generates the notes line-by-line (typewriter effect) rather than a simple spinner.",
+    "7. DASHBOARD: Use the 'Bento Grid' layout for the history. Each card should show a summary, date, and a 'tag' for the length (Short/Detailed).",
+    "8. ACCESSIBILITY: Ensure all text inputs have labels and all interactive elements have focus states (ring-2 ring-indigo-500).",
+    "9. TESTING: Add data-testid attributes to: 'upload-dropzone', 'generate-btn', 'notes-output', 'download-pdf-btn'."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Avoid generic 'AI slop' designs. No default Bootstrap-looking grids.",
+    "Use 2-3x more spacing than typical. Whitespace is luxury.",
+    "Never use pure black (#000000). Use #0A0A0A or #0f172a.",
+    "Micro-interactions are mandatory. Buttons should scale slightly on press.",
+    "Use 'sonner' for all toast notifications.",
+    "Do not use 'transition: all'. Be specific (e.g., transition-colors, transition-transform)."
+  ]
+}
