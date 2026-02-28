@@ -14,12 +14,18 @@ import PyPDF2
 import io
 import httpx
 
+DB_AVAILABLE = False
+notes_memory_store: dict[str, dict] = {}
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection (optional; app falls back to in-memory storage)
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=int(os.environ.get('MONGO_SERVER_SELECTION_TIMEOUT_MS', '1500')),
+)
 db = client[os.environ.get('DB_NAME', 'test_database')]
 
 # Create the main app without a prefix
@@ -27,6 +33,18 @@ app = FastAPI()
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+
+async def _init_db_connection() -> None:
+    """Initialize DB connectivity. If Mongo isn't reachable, keep running with memory storage."""
+    global DB_AVAILABLE
+    try:
+        await client.admin.command("ping")
+        DB_AVAILABLE = True
+        logging.info("MongoDB connected")
+    except Exception as e:
+        DB_AVAILABLE = False
+        logging.warning(f"MongoDB not reachable; using in-memory notes store. Details: {e}")
 
 # Models
 class Note(BaseModel):
@@ -229,10 +247,18 @@ async def generate_notes(request: GenerateNotesRequest):
         notes_length=request.notes_length
     )
     
-    # Store in MongoDB
+    # Store note (MongoDB if available, otherwise in-memory)
     doc = note.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
-    await db.notes.insert_one(doc)
+
+    if DB_AVAILABLE:
+        try:
+            await db.notes.insert_one(doc)
+        except Exception as e:
+            logging.warning(f"Mongo insert failed; falling back to in-memory store. Details: {e}")
+            notes_memory_store[note.id] = doc
+    else:
+        notes_memory_store[note.id] = doc
     
     return GenerateNotesResponse(
         note_id=note.id,
@@ -242,19 +268,26 @@ async def generate_notes(request: GenerateNotesRequest):
 @api_router.get("/notes-history", response_model=List[Note])
 async def get_notes_history():
     """Get all notes history"""
-    notes = await db.notes.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    
-    # Convert ISO strings back to datetime
+    if DB_AVAILABLE:
+        notes = await db.notes.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    else:
+        notes = list(notes_memory_store.values())
+        notes.sort(key=lambda n: n.get("created_at", ""), reverse=True)
+        notes = notes[:100]
+
     for note in notes:
-        if isinstance(note['created_at'], str):
+        if isinstance(note.get('created_at'), str):
             note['created_at'] = datetime.fromisoformat(note['created_at'])
-    
+
     return notes
 
 @api_router.get("/notes/{note_id}", response_model=Note)
 async def get_note(note_id: str):
     """Get a specific note by ID"""
-    note = await db.notes.find_one({"id": note_id}, {"_id": 0})
+    if DB_AVAILABLE:
+        note = await db.notes.find_one({"id": note_id}, {"_id": 0})
+    else:
+        note = notes_memory_store.get(note_id)
     
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -281,6 +314,11 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def startup_db_client():
+    await _init_db_connection()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

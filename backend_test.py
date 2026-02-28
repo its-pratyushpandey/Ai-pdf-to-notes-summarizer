@@ -3,6 +3,7 @@ import sys
 import json
 import io
 from datetime import datetime
+from pathlib import Path
 
 class NotesAPITester:
     def __init__(self, base_url="http://localhost:8000"):
@@ -287,7 +288,8 @@ def main():
     success = tester.run_all_tests()
     
     # Save detailed results
-    with open('/app/backend_test_results.json', 'w') as f:
+    report_path = Path(__file__).resolve().parent / 'backend_test_results.json'
+    with open(report_path, 'w', encoding='utf-8') as f:
         json.dump({
             'timestamp': datetime.now().isoformat(),
             'total_tests': tester.tests_run,

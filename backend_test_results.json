@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-06T18:44:18.079024",
+  "timestamp": "2026-02-28T18:53:53.817538",
   "total_tests": 8,
   "passed_tests": 8,
   "success_rate": 1.0,
@@ -17,27 +17,27 @@
     {
       "test": "Notes Generation (short)",
       "success": true,
-      "details": "Status: 200, Note ID: c84430e1..., Markdown formatting detected"
+      "details": "Status: 200, Note ID: 3f7e7449..., Markdown formatting detected"
     },
     {
       "test": "Notes Generation (medium)",
       "success": true,
-      "details": "Status: 200, Note ID: 038e9feb..., Markdown formatting detected"
+      "details": "Status: 200, Note ID: ce15da16..., Markdown formatting detected"
     },
     {
       "test": "Notes Generation (detailed)",
       "success": true,
-      "details": "Status: 200, Note ID: c81a6bb2..., Markdown formatting detected"
+      "details": "Status: 200, Note ID: b3fca183..., Markdown formatting detected"
     },
     {
       "test": "Notes History",
       "success": true,
-      "details": "Status: 200, Found 3 notes, Note structure valid"
+      "details": "Status: 200, Found 12 notes, Note structure valid"
     },
     {
       "test": "Get Note by ID",
       "success": true,
-      "details": "Status: 200, Note retrieved: c84430e1..."
+      "details": "Status: 200, Note retrieved: 3f7e7449..."
     },
     {
       "test": "Invalid PDF Handling",

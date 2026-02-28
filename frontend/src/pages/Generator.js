@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Upload, FileText, BookOpen, Sparkles, ArrowLeft, Download, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 const API = `${BACKEND_URL}/api`;
 
 const Generator = () => {
