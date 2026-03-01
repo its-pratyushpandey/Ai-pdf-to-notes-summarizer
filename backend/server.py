@@ -13,9 +13,49 @@ from datetime import datetime, timezone
 import PyPDF2
 import io
 import httpx
+import asyncio
+import threading
+import re
+
+try:
+    # When running from backend/ (e.g., `uvicorn server:app --reload`)
+    from summarizer.service import SummarizerService
+except ImportError:  # pragma: no cover
+    # When running from repo root (e.g., `uvicorn backend.server:app --reload`)
+    from backend.summarizer.service import SummarizerService
 
 DB_AVAILABLE = False
 notes_memory_store: dict[str, dict] = {}
+
+SUMMARIZER_AVAILABLE = False
+summarizer_service = SummarizerService()
+_summarizer_load_lock = threading.Lock()
+_summarizer_load_attempted = False
+summarizer_load_error: Optional[str] = None
+
+
+def _ensure_summarizer_loaded() -> None:
+    """Load the summarizer model once (thread-safe) and remember failures."""
+    global SUMMARIZER_AVAILABLE, _summarizer_load_attempted, summarizer_load_error
+
+    if SUMMARIZER_AVAILABLE:
+        return
+
+    with _summarizer_load_lock:
+        if SUMMARIZER_AVAILABLE:
+            return
+        if _summarizer_load_attempted and summarizer_load_error:
+            raise RuntimeError(summarizer_load_error)
+
+        _summarizer_load_attempted = True
+        try:
+            summarizer_service.load()
+            SUMMARIZER_AVAILABLE = True
+            summarizer_load_error = None
+        except Exception as e:
+            SUMMARIZER_AVAILABLE = False
+            summarizer_load_error = str(e)
+            raise
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -68,6 +108,20 @@ class GenerateNotesResponse(BaseModel):
     note_id: str
     notes_content: str
 
+
+class SummarizeRequest(BaseModel):
+    text: str
+    min_length: int = 30
+    max_length: int = 120
+    max_input_tokens: int = 768
+
+
+class SummarizeResponse(BaseModel):
+    summary: str
+    model_id: str
+    elapsed_ms: float
+    chunk_count: int
+
 # Helper function to extract text from PDF
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     try:
@@ -86,6 +140,52 @@ async def generate_notes_with_ai(text: str, length: str) -> str:
         groq_key = os.environ.get('GROQ_API_KEY')
         gemini_key = os.environ.get('GEMINI_API_KEY')
         openai_key = os.environ.get('OPENAI_API_KEY')
+
+        async def _local_notes_fallback() -> str:
+            """Local fallback notes generator so the app works without API keys.
+
+            Uses the local summarizer model to create a concise, markdown-formatted
+            study note outline.
+            """
+            try:
+                _ensure_summarizer_loaded()
+            except Exception as e:
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "No external AI API key configured and local summarizer model is not available. "
+                        "Set GROQ_API_KEY/GEMINI_API_KEY/OPENAI_API_KEY or install summarization deps so the local model can load. "
+                        f"Details: {str(e)}"
+                    ),
+                )
+
+            # Map notes length to summary length.
+            length_cfg = {
+                "short": {"min": 20, "max": 80, "bullets": 6},
+                "medium": {"min": 40, "max": 140, "bullets": 10},
+                "detailed": {"min": 60, "max": 220, "bullets": 14},
+            }.get(length, {"min": 40, "max": 140, "bullets": 10})
+
+            result = summarizer_service.summarize(
+                text,
+                min_length=length_cfg["min"],
+                max_length=length_cfg["max"],
+            )
+
+            # Convert summary into bullets (simple sentence split).
+            summary = result.summary.strip()
+            sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", summary) if s.strip()]
+            bullets = sentences[: length_cfg["bullets"]] if sentences else [summary]
+            bullets_md = "\n".join([f"- {b}" for b in bullets if b])
+
+            return (
+                "## Summary\n"
+                f"{bullets_md}\n\n"
+                "## Key Takeaways\n"
+                "- Focus on the main ideas and definitions\n"
+                "- Note any cause/effect relationships\n"
+                "- Write down names, dates, and numbers if present\n"
+            )
         
         # Configure prompt based on length
         length_instructions = {
@@ -196,8 +296,9 @@ Content to convert into notes:
                 
                 result = response.json()
                 return result['choices'][0]['message']['content']
-            
-            raise HTTPException(status_code=500, detail="No API key configured. Please set GROQ_API_KEY (free), GEMINI_API_KEY, or OPENAI_API_KEY in .env file")
+
+            # No external keys configured -> local fallback.
+            return await _local_notes_fallback()
         
     except httpx.HTTPError as e:
         logging.error(f"HTTP error during AI generation: {str(e)}")
@@ -210,6 +311,63 @@ Content to convert into notes:
 @api_router.get("/")
 async def root():
     return {"message": "NoteGenius AI API"}
+
+
+@api_router.post("/summarize", response_model=SummarizeResponse)
+async def summarize_article(request: SummarizeRequest):
+    """Generate a concise summary for an article using the local transformer model."""
+    if not request.text or not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text content cannot be empty")
+
+    if request.min_length < 1 or request.max_length < 1:
+        raise HTTPException(status_code=400, detail="min_length and max_length must be positive")
+    if request.max_length < request.min_length:
+        raise HTTPException(status_code=400, detail="max_length must be >= min_length")
+    if request.max_input_tokens < 64:
+        raise HTTPException(status_code=400, detail="max_input_tokens must be >= 64")
+
+    # Basic payload guardrails (avoid accidental multi-MB posts)
+    if len(request.text) > 250_000:
+        raise HTTPException(status_code=413, detail="Text too large; please submit a shorter article")
+
+    if not SUMMARIZER_AVAILABLE:
+        try:
+            # Lazy-load on first request (may download weights on first run).
+            _ensure_summarizer_loaded()
+        except Exception as e:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Summarizer model is not available. "
+                    "Install summarization requirements and/or train the model. "
+                    f"Details: {str(e)}"
+                ),
+            )
+
+    try:
+        result = summarizer_service.summarize(
+            request.text,
+            min_length=request.min_length,
+            max_length=request.max_length,
+            max_input_tokens=request.max_input_tokens,
+        )
+
+        logger.info(
+            "summarize ok chars=%s chunks=%s ms=%.1f model=%s",
+            len(request.text),
+            result.chunk_count,
+            result.elapsed_ms,
+            result.model_id,
+        )
+        return SummarizeResponse(
+            summary=result.summary,
+            model_id=result.model_id,
+            elapsed_ms=result.elapsed_ms,
+            chunk_count=result.chunk_count,
+        )
+    except Exception as e:
+        logging.exception("Summarization failed")
+        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
 
 @api_router.post("/extract-pdf")
 async def extract_pdf(file: UploadFile = File(...)):
@@ -300,10 +458,30 @@ async def get_note(note_id: str):
 # Include the router in the main app
 app.include_router(api_router)
 
+# CORS
+# - In dev, the frontend may run on either http://localhost:3000 or http://127.0.0.1:3000.
+# - Avoid the problematic combination of allow_credentials=True + allow_origins=['*'].
+cors_origins_raw = os.environ.get("CORS_ORIGINS")
+if cors_origins_raw:
+    cors_origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
+else:
+    cors_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
+allow_all_origins = "*" in cors_origins
+
+# Always include common local dev origins unless wildcard is used.
+if not allow_all_origins:
+    for dev_origin in ("http://localhost:3000", "http://127.0.0.1:3000"):
+        if dev_origin not in cors_origins:
+            cors_origins.append(dev_origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_credentials=False if allow_all_origins else True,
+    allow_origins=["*"] if allow_all_origins else cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -319,6 +497,17 @@ logger = logging.getLogger(__name__)
 @app.on_event("startup")
 async def startup_db_client():
     await _init_db_connection()
+
+    # Optional warm start that won't block startup.
+    if os.environ.get("SUMMARIZER_WARM_START", "0").strip() == "1":
+        async def _warm() -> None:
+            try:
+                await asyncio.to_thread(_ensure_summarizer_loaded)
+                logging.info("Summarizer model warmed")
+            except Exception as e:
+                logging.warning(f"Summarizer warm start failed: {e}")
+
+        asyncio.create_task(_warm())
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

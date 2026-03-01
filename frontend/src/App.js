@@ -3,7 +3,6 @@ import { Toaster } from 'sonner';
 import Home from './pages/Home';
 import Generator from './pages/Generator';
 import Dashboard from './pages/Dashboard';
-import '@/index.css';
 
 function App() {
   return (

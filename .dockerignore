@@ -1,0 +1,15 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.git
+.gitignore
+.vscode
+frontend/node_modules
+frontend/build
+backend/.venv
+backend/venv
+backend/models
+backend/data/processed
+ai_summarizer/models
+ai_summarizer/logs

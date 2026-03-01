@@ -187,8 +187,8 @@ const Dashboard = () => {
               </button>
             </div>
             
-            <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)]" data-testid="note-content">
-              <div className="prose prose-slate max-w-none font-serif">
+            <div className="p-4 sm:p-8 overflow-y-auto max-h-[calc(85vh-120px)]" data-testid="note-content">
+              <div className="prose max-w-none font-serif">
                 <ReactMarkdown>{selectedNote.notes_content}</ReactMarkdown>
               </div>
             </div>

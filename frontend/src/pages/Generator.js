@@ -140,7 +140,7 @@ const Generator = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col"
+            className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 flex flex-col"
             data-testid="input-panel"
           >
             <h2 className="font-sans text-2xl font-bold text-slate-900 mb-6">Create Notes</h2>
@@ -212,7 +212,7 @@ const Generator = () => {
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
                 placeholder="Paste your text content here..."
-                className="flex-1 border border-slate-200 rounded-xl p-4 resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
+                className="min-h-[240px] lg:min-h-0 flex-1 border border-slate-200 rounded-xl p-4 resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                 data-testid="text-input"
               />
             )}
@@ -263,7 +263,7 @@ const Generator = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-background-paper rounded-2xl border border-slate-100 shadow-sm p-8 flex flex-col overflow-hidden"
+            className="bg-background-paper rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-8 flex flex-col overflow-hidden"
             data-testid="output-panel"
           >
             <div className="flex justify-between items-center mb-6">
@@ -281,7 +281,7 @@ const Generator = () => {
 
             <div className="flex-1 overflow-y-auto" data-testid="notes-output">
               {generatedNotes ? (
-                <div className="prose prose-slate max-w-none font-serif">
+                <div className="prose max-w-none font-serif">
                   <ReactMarkdown>{generatedNotes}</ReactMarkdown>
                 </div>
               ) : (

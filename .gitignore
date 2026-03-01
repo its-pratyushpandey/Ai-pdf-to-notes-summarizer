@@ -52,6 +52,14 @@ __pycache__/
 venv/
 .venv/
 
+# Local ML artifacts (can be regenerated)
+backend/data/processed/
+backend/models/
+
+# ai_summarizer artifacts
+ai_summarizer/models/
+ai_summarizer/logs/
+
 # Development tools
 chainlit.md
 .chainlit

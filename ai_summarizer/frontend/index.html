@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Text Summarizer</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; max-width: 960px; }
+      textarea { width: 100%; min-height: 240px; padding: 12px; }
+      .row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+      .card { border: 1px solid #ddd; padding: 12px; border-radius: 8px; }
+      label { display: block; font-size: 12px; opacity: 0.8; margin-bottom: 6px; }
+      input { width: 160px; }
+      button { padding: 10px 14px; cursor: pointer; }
+      pre { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>AI Text Summarizer</h1>
+    <p>Paste an article, adjust parameters, and summarize.</p>
+
+    <textarea id="text" placeholder="Paste article text..."></textarea>
+
+    <div class="row">
+      <div class="card">
+        <label for="max_length">max_length</label>
+        <input id="max_length" type="number" value="120" min="16" max="256" />
+      </div>
+      <div class="card">
+        <label for="num_beams">num_beams</label>
+        <input id="num_beams" type="number" value="4" min="1" max="8" />
+      </div>
+      <div class="card">
+        <label for="temperature">temperature</label>
+        <input id="temperature" type="number" value="1.0" step="0.1" min="0.1" max="2.0" />
+      </div>
+      <div class="card">
+        <label for="top_p">top_p</label>
+        <input id="top_p" type="number" value="0.95" step="0.01" min="0.1" max="1.0" />
+      </div>
+      <div class="card">
+        <label>&nbsp;</label>
+        <button id="go">Summarize</button>
+      </div>
+    </div>
+
+    <h2>Result</h2>
+    <div class="card">
+      <div id="meta"></div>
+      <pre id="out"></pre>
+    </div>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+      el('go').addEventListener('click', async () => {
+        const payload = {
+          text: el('text').value,
+          max_length: Number(el('max_length').value),
+          num_beams: Number(el('num_beams').value),
+          temperature: Number(el('temperature').value),
+          top_p: Number(el('top_p').value),
+        };
+        el('meta').textContent = 'Running...';
+        el('out').textContent = '';
+        const res = await fetch('/summarize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          el('meta').textContent = 'Error';
+          el('out').textContent = JSON.stringify(data, null, 2);
+          return;
+        }
+        el('meta').textContent = `confidence=${data.confidence_score.toFixed(3)} latency_ms=${Math.round(data.latency_ms)}`;
+        el('out').textContent = data.summary;
+      });
+    </script>
+  </body>
+</html>

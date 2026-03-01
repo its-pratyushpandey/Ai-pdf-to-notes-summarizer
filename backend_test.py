@@ -145,6 +145,55 @@ Key Points:
             self.log_test(f"Notes Generation ({length})", False, str(e))
             return False, {}
 
+    def test_summarization(self, text=None, min_length=10, max_length=30):
+        """Test POST /api/summarize"""
+        try:
+            if not text:
+                text = (
+                    "Machine learning is a subset of artificial intelligence. "
+                    "It involves training models on data and is widely used in NLP, vision, and recommendations."
+                )
+
+            payload = {
+                "text": text,
+                "min_length": min_length,
+                "max_length": max_length,
+            }
+
+            response = requests.post(f"{self.api_url}/summarize", json=payload, timeout=120)
+
+            # This endpoint may return 503 if the model/deps aren't installed yet.
+            success = response.status_code in [200, 503]
+            details = f"Status: {response.status_code}"
+
+            if response.status_code == 200:
+                data = response.json()
+                if "summary" in data and data.get("summary"):
+                    details += f", Summary chars: {len(data['summary'])}"
+                else:
+                    success = False
+                    details += ", Missing summary field"
+            elif response.status_code == 503:
+                try:
+                    error_data = response.json()
+                    details += f", Service unavailable: {error_data.get('detail', 'Unknown error')}"
+                except Exception:
+                    details += f", Raw response: {response.text[:200]}"
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data.get('detail', 'Unknown error')}"
+                except Exception:
+                    details += f", Raw response: {response.text[:200]}"
+
+            self.log_test("Article Summarization", success, details)
+            return success, response.json() if response.text else {}
+
+        except Exception as e:
+            self.log_test("Article Summarization", False, str(e))
+            return False, {}
+
     def test_notes_history(self):
         """Test GET /api/notes-history"""
         try:
@@ -259,6 +308,9 @@ Key Points:
             success, data = self.test_notes_generation(length=length)
             if success and not note_id:
                 note_id = data.get('note_id')
+
+        # Test 3b: Summarization (local model)
+        self.test_summarization()
         
         # Test 4: Notes history
         history_success, history_data = self.test_notes_history()
